@@ -14,6 +14,7 @@ let searchInput;
 let movieGrid;
 let topMoviesGrid;
 let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+let currentDetailMovie = null; // currently opened movie in detail screen
 
 // Ensure watchlist is an array of valid items (sanitize on load)
 function sanitizeWatchlist() {
@@ -22,8 +23,10 @@ function sanitizeWatchlist() {
     watchlist = [];
     changed = true;
   } else {
-    const filtered = watchlist.filter(item => item && item.imdbID && typeof item.imdbID === 'string');
+    // Keep only well-formed entries: require imdbID and non-empty Title
+    const filtered = watchlist.filter(item => item && item.imdbID && typeof item.imdbID === 'string' && item.Title && item.Title.toString().trim() !== '');
     if (filtered.length !== watchlist.length) {
+      console.log('[movies-app] sanitizeWatchlist: removed', watchlist.length - filtered.length, 'invalid items');
       watchlist = filtered;
       changed = true;
     }
@@ -31,6 +34,17 @@ function sanitizeWatchlist() {
   if (changed) {
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
   }
+}
+
+function refreshWatchlistFromStorage() {
+  try {
+    const raw = localStorage.getItem('watchlist');
+    watchlist = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('[movies-app] refreshWatchlistFromStorage parse error', e);
+    watchlist = [];
+  }
+  console.log('[movies-app] watchlist loaded from storage:', watchlist.length, watchlist.map(m => m.imdbID));
 }
 
 // === Инициализация ===
